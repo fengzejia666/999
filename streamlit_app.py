@@ -824,6 +824,14 @@ def clear_dependent_results():
     st.session_state.export_completed = False
 
 
+def rerun_app():
+    """兼容新旧 Streamlit 版本的页面重新运行接口。"""
+    rerun = getattr(st, "rerun", None)
+    if rerun is None:
+        rerun = st.experimental_rerun
+    rerun()
+
+
 def load_uploaded_image(uploaded, bridge):
     """Load a newly uploaded image and reset dependent experiment state."""
     if uploaded is None:
@@ -1015,12 +1023,12 @@ def render_input_rail(bridge):
             bridge.set_calibration(points[0], points[1], actual_mm)
             st.session_state.calibrated = True
             clear_dependent_results()
-            st.experimental_rerun()
+            rerun_app()
         except ValueError as exc:
             st.error(str(exc))
     if clear_column.button("重新选点", use_container_width=True):
         reset_calibration_selection(bridge)
-        st.experimental_rerun()
+        rerun_app()
 
 
 def render_twin_viewport(bridge):
@@ -1097,7 +1105,7 @@ def render_twin_viewport(bridge):
                     st.session_state.calib_points = [points[0], point]
                     selection_changed = True
                 if selection_changed:
-                    st.experimental_rerun()
+                    rerun_app()
             if len(st.session_state.calib_points) >= 2:
                 st.caption("两个标定点已选定；如需更改，请点击左侧“重新选点”。")
             else:
@@ -1277,7 +1285,7 @@ def render_analysis_matrix(bridge):
             )
             st.session_state.physics_result = None
             st.session_state.export_completed = False
-            st.experimental_rerun()
+            rerun_app()
         except RuntimeError as exc:
             st.error(str(exc))
 
@@ -1474,7 +1482,7 @@ def render_physics_matrix():
                 }
             st.session_state.physics_result = payload
             st.session_state.export_completed = False
-            st.experimental_rerun()
+            rerun_app()
     except ValueError as exc:
         st.error(str(exc))
 
