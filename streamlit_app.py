@@ -61,7 +61,7 @@ def clickable_calibration_image(image, display_width, points, key):
     )
 
 
-CHINESE_FONT_AVAILABLE = configure_matplotlib_chinese()
+configure_matplotlib_chinese()
 
 
 st.set_page_config(
@@ -644,6 +644,60 @@ def inject_interface_styles():
         [data-testid="stFileUploadDropzone"] small {
             line-height: 1.4;
             overflow-wrap: anywhere;
+        }
+
+        [data-testid="stFileUploadDropzone"] span {
+            font-size: 0;
+        }
+
+        [data-testid="stFileUploadDropzone"] span::after {
+            content: "将图片拖放到此处";
+            font-size: .88rem;
+        }
+
+        [data-testid="stFileUploadDropzone"] small {
+            font-size: 0;
+        }
+
+        [data-testid="stFileUploadDropzone"] small::after {
+            content: "单个文件最大 200 MB，支持 JPG、JPEG、PNG、BMP";
+            font-size: .72rem;
+        }
+
+        [data-testid="stFileUploadDropzone"] > button {
+            font-size: 0;
+        }
+
+        [data-testid="stFileUploadDropzone"] > button::after {
+            content: "浏览文件";
+            font-size: .85rem;
+        }
+
+        [data-testid="stFileUploaderDropzone"] span {
+            font-size: 0;
+        }
+
+        [data-testid="stFileUploaderDropzone"] span::after {
+            content: "将图片拖放到此处";
+            font-size: .88rem;
+        }
+
+        [data-testid="stFileUploaderDropzone"] small {
+            font-size: 0;
+        }
+
+        [data-testid="stFileUploaderDropzone"] small::after {
+            content: "单个文件最大 200 MB，支持 JPG、JPEG、PNG、BMP";
+            font-size: .72rem;
+        }
+
+        [data-testid="stFileUploaderDropzone"] button {
+            font-size: 0;
+        }
+
+        [data-testid="stFileUploaderDropzone"] button::after {
+            content: "浏览文件";
+            font-size: .85rem;
         }
 
         [data-testid="stAlert"] {
@@ -1307,7 +1361,7 @@ def render_analysis_matrix(bridge):
         bundle["x"],
         bundle["raw"],
         color="#385f7b",
-        label="原始投影" if CHINESE_FONT_AVAILABLE else "Raw projection",
+        label="原始投影",
         linewidth=1.1,
     )
     if result["preprocessing"]["remove_background"]:
@@ -1315,11 +1369,11 @@ def render_analysis_matrix(bridge):
             bundle["x"],
             bundle["background"],
             color="#d79527",
-            label="估计背景" if CHINESE_FONT_AVAILABLE else "Estimated background",
+            label="估计背景",
             linewidth=1.0,
             alpha=0.85,
         )
-    axes[0].set_ylabel("亮度" if CHINESE_FONT_AVAILABLE else "Intensity")
+    axes[0].set_ylabel("亮度")
     axes[0].legend(fontsize=7, frameon=False)
     axes[1].plot(
         bundle["x"], bundle["processed"], color="#1769aa", linewidth=1.25
@@ -1333,14 +1387,10 @@ def render_analysis_matrix(bridge):
         color="#36b8e6",
         markeredgecolor="#0b5d91",
         markersize=4.5,
-        label="检测峰值" if CHINESE_FONT_AVAILABLE else "Detected peaks",
+        label="检测峰值",
     )
-    axes[1].set_xlabel(
-        "横向像素位置" if CHINESE_FONT_AVAILABLE else "Horizontal pixel position"
-    )
-    axes[1].set_ylabel(
-        "处理后信号" if CHINESE_FONT_AVAILABLE else "Processed signal"
-    )
+    axes[1].set_xlabel("横向像素位置")
+    axes[1].set_ylabel("处理后信号")
     axes[1].legend(fontsize=7, frameon=False)
     for axis in axes:
         axis.set_facecolor((1, 1, 1, 0.18))
