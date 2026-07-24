@@ -21,12 +21,20 @@ from physics import (
     wavelength_nm,
 )
 from report_utils import (
-    configure_matplotlib_chinese,
     marked_png_bytes,
     result_csv_bytes,
     result_json_bytes,
     result_pdf_bytes,
 )
+
+try:
+    from report_utils import configure_matplotlib_chinese
+except ImportError:
+    def configure_matplotlib_chinese():
+        """旧版导出模块的兼容回退：使用英文图表标签。"""
+        plt.rcParams["font.family"] = ["DejaVu Sans"]
+        plt.rcParams["axes.unicode_minus"] = False
+        return False
 
 calibration_click_component = components.declare_component(
     "calibration_click_component",
