@@ -37,14 +37,19 @@ def _chinese_font():
         "Microsoft YaHei UI",
         "SimHei",
         "Noto Sans CJK SC",
+        "Noto Sans CJK JP",
         "Source Han Sans CN",
+        "WenQuanYi Zen Hei",
+        "AR PL UMing CN",
         "Arial Unicode MS",
     )
-    installed = {font.name for font in font_manager.fontManager.ttflist}
+    installed = {
+        font.name: font.fname for font in font_manager.fontManager.ttflist
+    }
     for name in candidates:
         if name in installed:
-            return font_manager.FontProperties(family=name)
-    return font_manager.FontProperties(family="sans-serif")
+            return font_manager.FontProperties(fname=installed[name])
+    return font_manager.FontProperties()
 
 
 def _physics_payload_cn(physics_result):

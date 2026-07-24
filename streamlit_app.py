@@ -1575,14 +1575,19 @@ def render_export_matrix(bridge):
         on_click=mark_export_completed,
         use_container_width=True,
     )
-    st.download_button(
-        "下载实验报告（PDF）",
-        result_pdf_bytes(result, marked, bundle, physics_result),
-        file_name="双缝干涉实验报告.pdf",
-        mime="application/pdf",
-        on_click=mark_export_completed,
-        use_container_width=True,
-    )
+    try:
+        pdf_data = result_pdf_bytes(result, marked, bundle, physics_result)
+    except Exception as exc:
+        st.warning("PDF 报告暂时无法生成，但其他结果仍可正常下载：{}".format(exc))
+    else:
+        st.download_button(
+            "下载实验报告（PDF）",
+            pdf_data,
+            file_name="双缝干涉实验报告.pdf",
+            mime="application/pdf",
+            on_click=mark_export_completed,
+            use_container_width=True,
+        )
     st.caption("所有文件均由本地实验数据即时生成。")
 
 
