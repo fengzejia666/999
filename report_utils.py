@@ -3,6 +3,11 @@
 import csv
 import io
 import json
+import os
+import tempfile
+import urllib.error
+import urllib.request
+from functools import lru_cache
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
@@ -12,14 +17,26 @@ from PIL import Image
 
 PHYSICS_LABELS = {
     "mode": "计算模式",
-    "wavelength_nm": "波长（nm）",
-    "screen_distance_m": "屏距（m）",
-    "slit_spacing_mm": "双缝间距（mm）",
-    "spacing_mm": "实验间距（mm）",
-    "theoretical_spacing_mm": "理论间距（mm）",
-    "measured_spacing_mm": "测量间距（mm）",
-    "absolute_error_mm": "绝对误差（mm）",
-    "relative_error_percent": "相对误差（%）",
+    "wavelength_nm": "波长 (nm)",
+    "screen_distance_m": "屏距 (m)",
+    "slit_spacing_mm": "双缝间距 (mm)",
+    "spacing_mm": "实验间距 (mm)",
+    "theoretical_spacing_mm": "理论间距 (mm)",
+    "measured_spacing_mm": "测量间距 (mm)",
+    "absolute_error_mm": "绝对误差 (mm)",
+    "relative_error_percent": "相对误差 (%)",
+}
+
+PHYSICS_LABELS_EN = {
+    "mode": "Calculation mode",
+    "wavelength_nm": "Wavelength (nm)",
+    "screen_distance_m": "Screen distance (m)",
+    "slit_spacing_mm": "Slit spacing (mm)",
+    "spacing_mm": "Experimental spacing (mm)",
+    "theoretical_spacing_mm": "Theoretical spacing (mm)",
+    "measured_spacing_mm": "Measured spacing (mm)",
+    "absolute_error_mm": "Absolute error (mm)",
+    "relative_error_percent": "Relative error (%)",
 }
 
 MODE_LABELS = {
@@ -29,9 +46,26 @@ MODE_LABELS = {
     "screen_distance": "反算屏距",
 }
 
+MODE_LABELS_EN = {
+    "theoretical_spacing": "Calculate theoretical spacing",
+    "wavelength": "Calculate wavelength",
+    "slit_spacing": "Calculate slit spacing",
+    "screen_distance": "Calculate screen distance",
+    "计算理论条纹间距": "Calculate theoretical spacing",
+    "反算光波波长": "Calculate wavelength",
+    "反算双缝间距": "Calculate slit spacing",
+    "反算双缝到屏幕距离": "Calculate screen distance",
+}
 
+NOTO_CJK_URL = (
+    "https://raw.githubusercontent.com/notofonts/noto-cjk/main/"
+    "Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf"
+)
+
+
+@lru_cache(maxsize=1)
 def _chinese_font():
-    """返回系统中可用于中文报告的字体属性。"""
+    """返回报告字体以及该字体是否支持中文。"""
     candidates = (
         "Microsoft YaHei",
         "Microsoft YaHei UI",
@@ -48,8 +82,21 @@ def _chinese_font():
     }
     for name in candidates:
         if name in installed:
-            return font_manager.FontProperties(fname=installed[name])
-    return font_manager.FontProperties()
+            return font_manager.FontProperties(fname=installed[name]), True
+
+    font_path = os.path.join(tempfile.gettempdir(), "NotoSansCJKsc-Regular.otf")
+    try:
+        if not os.path.exists(font_path) or os.path.getsize(font_path) < 1_000_000:
+            with urllib.request.urlopen(NOTO_CJK_URL, timeout=30) as response:
+                font_data = response.read()
+            if len(font_data) < 1_000_000 or font_data[:4] != b"OTTO":
+                raise ValueError("下载的中文字体文件无效")
+            with open(font_path, "wb") as font_file:
+                font_file.write(font_data)
+        font_manager.fontManager.addfont(font_path)
+        return font_manager.FontProperties(fname=font_path), True
+    except (OSError, ValueError, urllib.error.URLError):
+        return font_manager.FontProperties(), False
 
 
 def _physics_payload_cn(physics_result):
@@ -70,7 +117,7 @@ def result_csv_bytes(result):
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow([
-        "条纹序号", "峰值横坐标（px）", "至下一条纹间距（px）", "至下一条纹间距（mm）"
+        "条纹序号", "峰值横坐标 (px)", "至下一条纹间距 (px)", "至下一条纹间距 (mm)"
     ])
     for index, peak in enumerate(result['peaks']):
         spacing_px = result['spacings_px'][index] if index < len(result['spacings_px']) else ""
@@ -83,16 +130,16 @@ def result_json_bytes(result, physics_result=None):
     """生成包含测量参数和实验计算结果的 JSON。"""
     preprocessing = result["preprocessing"]
     measurement = {
-        "图像尺寸（px）": result["image_size"],
-        "标定比例（px/mm）": result["pixel_per_mm"],
+        "图像尺寸 (px)": result["image_size"],
+        "标定比例 (px/mm)": result["pixel_per_mm"],
         "亮条纹数量": result["num_fringes"],
-        "平均条纹间距（px）": result["mean_spacing_px"],
-        "平均条纹间距（mm）": result["mean_spacing_mm"],
-        "条纹间距标准差（px）": result["std_spacing_px"],
-        "条纹间距标准差（mm）": result["std_spacing_mm"],
-        "峰值横坐标（px）": result["peaks"],
-        "相邻条纹间距（px）": result["spacings_px"],
-        "相邻条纹间距（mm）": result["spacings_mm"],
+        "平均条纹间距 (px)": result["mean_spacing_px"],
+        "平均条纹间距 (mm)": result["mean_spacing_mm"],
+        "条纹间距标准差 (px)": result["std_spacing_px"],
+        "条纹间距标准差 (mm)": result["std_spacing_mm"],
+        "峰值横坐标 (px)": result["peaks"],
+        "相邻条纹间距 (px)": result["spacings_px"],
+        "相邻条纹间距 (mm)": result["spacings_mm"],
         "信号预处理": {
             "背景去除": "已启用" if preprocessing["remove_background"] else "未启用",
             "背景平滑系数": preprocessing["background_sigma"],
@@ -117,63 +164,129 @@ def marked_png_bytes(marked_rgb):
 def result_pdf_bytes(result, marked_rgb, signal_bundle, physics_result=None):
     """生成包含摘要、标记图和信号曲线的 PDF 报告。"""
     output = io.BytesIO()
-    chinese_font = _chinese_font()
+    report_font, supports_chinese = _chinese_font()
     with PdfPages(output) as pdf:
         summary = plt.figure(figsize=(8.27, 11.69))
         summary.text(
             0.08,
             0.94,
-            "双缝干涉条纹间距测量报告",
+            (
+                "双缝干涉条纹间距测量报告"
+                if supports_chinese
+                else "Double-slit Fringe Spacing Report"
+            ),
             fontsize=18,
             weight="bold",
-            fontproperties=chinese_font,
+            fontproperties=report_font,
         )
-        lines = [
-            "图像尺寸：{} × {} px".format(*result['image_size']),
-            "检测到的亮条纹数量：{}".format(result['num_fringes']),
-            "平均条纹间距：{:.3f} px".format(result['mean_spacing_px']),
-            "平均条纹间距：{:.6f} mm".format(result['mean_spacing_mm']),
-            "条纹间距标准差：{:.6f} mm".format(result['std_spacing_mm']),
-            "标定比例：{:.3f} px/mm".format(result['pixel_per_mm']),
-            "背景去除：{}".format(
-                "已启用" if result['preprocessing']['remove_background'] else "未启用"
-            ),
-            "背景平滑系数：{:.2f}".format(result['preprocessing']['background_sigma']),
-            "信号平滑系数：{:.2f}".format(result['preprocessing']['signal_sigma']),
-            "信号归一化：{}".format(
-                "已启用" if result['preprocessing']['normalize_signal'] else "未启用"
-            ),
-        ]
+        if supports_chinese:
+            lines = [
+                "图像尺寸：{} × {} px".format(*result['image_size']),
+                "检测到的亮条纹数量：{}".format(result['num_fringes']),
+                "平均条纹间距：{:.3f} px".format(result['mean_spacing_px']),
+                "平均条纹间距：{:.6f} mm".format(result['mean_spacing_mm']),
+                "条纹间距标准差：{:.6f} mm".format(result['std_spacing_mm']),
+                "标定比例：{:.3f} px/mm".format(result['pixel_per_mm']),
+                "背景去除：{}".format(
+                    "已启用"
+                    if result['preprocessing']['remove_background']
+                    else "未启用"
+                ),
+                "背景平滑系数：{:.2f}".format(
+                    result['preprocessing']['background_sigma']
+                ),
+                "信号平滑系数：{:.2f}".format(
+                    result['preprocessing']['signal_sigma']
+                ),
+                "信号归一化：{}".format(
+                    "已启用"
+                    if result['preprocessing']['normalize_signal']
+                    else "未启用"
+                ),
+            ]
+        else:
+            lines = [
+                "Image size: {} x {} px".format(*result['image_size']),
+                "Detected bright fringes: {}".format(result['num_fringes']),
+                "Mean spacing: {:.3f} px".format(result['mean_spacing_px']),
+                "Mean spacing: {:.6f} mm".format(result['mean_spacing_mm']),
+                "Spacing standard deviation: {:.6f} mm".format(
+                    result['std_spacing_mm']
+                ),
+                "Calibration scale: {:.3f} px/mm".format(result['pixel_per_mm']),
+                "Background removal: {}".format(
+                    "enabled"
+                    if result['preprocessing']['remove_background']
+                    else "disabled"
+                ),
+                "Background smoothing sigma: {:.2f}".format(
+                    result['preprocessing']['background_sigma']
+                ),
+                "Signal smoothing sigma: {:.2f}".format(
+                    result['preprocessing']['signal_sigma']
+                ),
+                "Signal normalization: {}".format(
+                    "enabled"
+                    if result['preprocessing']['normalize_signal']
+                    else "disabled"
+                ),
+            ]
         if physics_result:
-            lines.extend(["", "物理计算结果："])
-            for label, value in _physics_payload_cn(physics_result).items():
+            lines.extend([
+                "",
+                "物理计算结果：" if supports_chinese else "Physics calculation:",
+            ])
+            physics_payload = (
+                _physics_payload_cn(physics_result)
+                if supports_chinese
+                else {
+                    PHYSICS_LABELS_EN.get(key, key): (
+                        MODE_LABELS_EN.get(value, value) if key == "mode" else value
+                    )
+                    for key, value in physics_result.items()
+                }
+            )
+            for label, value in physics_payload.items():
                 if isinstance(value, float):
-                    lines.append("{}：{:.6g}".format(label, value))
+                    separator = "：" if supports_chinese else ": "
+                    lines.append("{}{}{:.6g}".format(label, separator, value))
                 else:
-                    lines.append("{}：{}".format(label, value))
+                    separator = "：" if supports_chinese else ": "
+                    lines.append("{}{}{}".format(label, separator, value))
         summary.text(
             0.08,
             0.86,
             "\n".join(lines),
             fontsize=11,
             va="top",
-            fontproperties=chinese_font,
+            fontproperties=report_font,
             linespacing=1.5,
         )
         summary.text(
             0.08,
             0.10,
-            "说明：测量结果受图像质量和标定精度影响。",
+            (
+                "说明：测量结果受图像质量和标定精度影响。"
+                if supports_chinese
+                else "Note: Results depend on image quality and calibration accuracy."
+            ),
             fontsize=9,
             color="dimgray",
-            fontproperties=chinese_font,
+            fontproperties=report_font,
         )
         pdf.savefig(summary, bbox_inches="tight")
         plt.close(summary)
 
         marked_fig, marked_ax = plt.subplots(figsize=(11.69, 8.27))
         marked_ax.imshow(marked_rgb)
-        marked_ax.set_title("检测到的亮条纹位置（红线标记）", fontproperties=chinese_font)
+        marked_ax.set_title(
+            (
+                "检测到的亮条纹位置（红线标记）"
+                if supports_chinese
+                else "Detected bright-fringe positions (red lines)"
+            ),
+            fontproperties=report_font,
+        )
         marked_ax.axis("off")
         marked_fig.tight_layout()
         pdf.savefig(marked_fig, bbox_inches="tight")
@@ -184,13 +297,28 @@ def result_pdf_bytes(result, marked_rgb, signal_bundle, physics_result=None):
         processed = signal_bundle['processed']
         peaks = signal_bundle['peaks']
         signal_ax.plot(x, processed, color="tab:blue", linewidth=1.2,
-                       label="预处理后的信号")
+                       label=(
+                           "预处理后的信号"
+                           if supports_chinese
+                           else "Processed signal"
+                       ))
         if peaks is not None and len(peaks):
-            signal_ax.plot(peaks, processed[peaks], "rx", label="检测到的峰值")
-        signal_ax.set_xlabel("水平像素位置", fontproperties=chinese_font)
-        signal_ax.set_ylabel("归一化光强", fontproperties=chinese_font)
+            signal_ax.plot(
+                peaks,
+                processed[peaks],
+                "rx",
+                label="检测到的峰值" if supports_chinese else "Detected peaks",
+            )
+        signal_ax.set_xlabel(
+            "水平像素位置" if supports_chinese else "Horizontal pixel position",
+            fontproperties=report_font,
+        )
+        signal_ax.set_ylabel(
+            "归一化光强" if supports_chinese else "Normalized intensity",
+            fontproperties=report_font,
+        )
         signal_ax.grid(alpha=0.25)
-        signal_ax.legend(prop=chinese_font)
+        signal_ax.legend(prop=report_font)
         signal_fig.tight_layout()
         pdf.savefig(signal_fig, bbox_inches="tight")
         plt.close(signal_fig)
