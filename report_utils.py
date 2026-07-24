@@ -99,6 +99,17 @@ def _chinese_font():
         return font_manager.FontProperties(), False
 
 
+def configure_matplotlib_chinese():
+    """配置 Matplotlib 中文字体，并返回中文是否可用。"""
+    report_font, supports_chinese = _chinese_font()
+    plt.rcParams["axes.unicode_minus"] = False
+    if supports_chinese:
+        plt.rcParams["font.family"] = [report_font.get_name()]
+    else:
+        plt.rcParams["font.family"] = ["DejaVu Sans"]
+    return supports_chinese
+
+
 def _physics_payload_cn(physics_result):
     """将物理计算结果转换为适合留档的中文字段。"""
     if not physics_result:

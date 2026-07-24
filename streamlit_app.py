@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
 import streamlit.components.v1 as components
-from matplotlib import font_manager
 from PIL import Image
 
 from fringe_core import FringeBridge
@@ -22,6 +21,7 @@ from physics import (
     wavelength_nm,
 )
 from report_utils import (
+    configure_matplotlib_chinese,
     marked_png_bytes,
     result_csv_bytes,
     result_json_bytes,
@@ -53,23 +53,7 @@ def clickable_calibration_image(image, display_width, points, key):
     )
 
 
-def configure_matplotlib_fonts():
-    """Select an installed CJK font so chart labels render consistently."""
-    preferred_fonts = (
-        "Microsoft YaHei",
-        "Noto Sans SC",
-        "SimHei",
-        "DengXian",
-    )
-    available_fonts = {font.name for font in font_manager.fontManager.ttflist}
-    for font_name in preferred_fonts:
-        if font_name in available_fonts:
-            plt.rcParams["font.sans-serif"] = [font_name, "DejaVu Sans"]
-            break
-    plt.rcParams["axes.unicode_minus"] = False
-
-
-configure_matplotlib_fonts()
+CHINESE_FONT_AVAILABLE = configure_matplotlib_chinese()
 
 
 st.set_page_config(
@@ -1315,7 +1299,7 @@ def render_analysis_matrix(bridge):
         bundle["x"],
         bundle["raw"],
         color="#385f7b",
-        label="原始投影",
+        label="原始投影" if CHINESE_FONT_AVAILABLE else "Raw projection",
         linewidth=1.1,
     )
     if result["preprocessing"]["remove_background"]:
@@ -1323,11 +1307,11 @@ def render_analysis_matrix(bridge):
             bundle["x"],
             bundle["background"],
             color="#d79527",
-            label="估计背景",
+            label="估计背景" if CHINESE_FONT_AVAILABLE else "Estimated background",
             linewidth=1.0,
             alpha=0.85,
         )
-    axes[0].set_ylabel("亮度")
+    axes[0].set_ylabel("亮度" if CHINESE_FONT_AVAILABLE else "Intensity")
     axes[0].legend(fontsize=7, frameon=False)
     axes[1].plot(
         bundle["x"], bundle["processed"], color="#1769aa", linewidth=1.25
@@ -1341,10 +1325,14 @@ def render_analysis_matrix(bridge):
         color="#36b8e6",
         markeredgecolor="#0b5d91",
         markersize=4.5,
-        label="检测峰值",
+        label="检测峰值" if CHINESE_FONT_AVAILABLE else "Detected peaks",
     )
-    axes[1].set_xlabel("横向像素位置")
-    axes[1].set_ylabel("处理后信号")
+    axes[1].set_xlabel(
+        "横向像素位置" if CHINESE_FONT_AVAILABLE else "Horizontal pixel position"
+    )
+    axes[1].set_ylabel(
+        "处理后信号" if CHINESE_FONT_AVAILABLE else "Processed signal"
+    )
     axes[1].legend(fontsize=7, frameon=False)
     for axis in axes:
         axis.set_facecolor((1, 1, 1, 0.18))
