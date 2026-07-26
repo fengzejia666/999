@@ -344,7 +344,7 @@ def inject_interface_styles():
             backdrop-filter: none;
         }
 
-        div[data-testid="column"]:has(.twin-viewport-title) {
+        div[data-testid="column"]:has(.twin-viewport-anchor) {
             position: relative;
             overflow: hidden;
             padding: .85rem;
@@ -354,7 +354,7 @@ def inject_interface_styles():
             box-shadow: 0 18px 46px rgba(31,82,119,.12), inset 0 1px 0 rgba(255,255,255,.98);
         }
 
-        div[data-testid="column"]:has(.twin-viewport-title)::before {
+        div[data-testid="column"]:has(.twin-viewport-anchor)::before {
             content: "";
             position: absolute;
             inset: 0;
@@ -367,9 +367,7 @@ def inject_interface_styles():
                 linear-gradient(315deg, rgba(54,184,230,.24) 0 2px, transparent 2px) bottom right/46px 46px no-repeat;
         }
 
-        .console-rail-title,
-        .matrix-title,
-        .twin-viewport-title {
+        .matrix-title {
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -383,9 +381,7 @@ def inject_interface_styles():
             font-weight: 700;
         }
 
-        .console-rail-title span,
-        .matrix-title span,
-        .twin-viewport-title span {
+        .matrix-title span {
             color: #6b879c;
             font-size: .66rem;
             font-weight: 650;
@@ -716,9 +712,7 @@ def inject_interface_styles():
                 flex-direction: column !important;
             }
 
-            .console-rail-title,
-            .matrix-title,
-            .twin-viewport-title {
+            .matrix-title {
                 word-break: keep-all;
             }
 
@@ -879,11 +873,6 @@ def render_console_header():
 
 def render_input_rail(bridge):
     """Render upload and calibration controls in the left instrument rail."""
-    st.markdown(
-        '<div class="console-rail-title">图像与标定'
-        '<span>图像输入与尺度标定</span></div>',
-        unsafe_allow_html=True,
-    )
     uploaded = st.file_uploader(
         "上传干涉条纹图像",
         type=["jpg", "jpeg", "png", "bmp"],
@@ -1025,23 +1014,10 @@ def render_input_rail(bridge):
 
 def render_twin_viewport(bridge):
     """Render the real fringe image as the center digital twin."""
-    state_label = "等待图像"
-    if bridge.has_image:
-        state_label = "等待标定"
-    if st.session_state.calibrated:
-        state_label = "标定完成"
-    if st.session_state.last_result is not None:
-        state_label = "检测结果"
-
-    st.markdown(
-        '<div class="twin-viewport-title">实验数字孪生'
-        '<span>{}</span></div>'.format(state_label),
-        unsafe_allow_html=True,
-    )
-
     if not bridge.has_image:
         st.markdown(
             """
+            <div class="twin-viewport-anchor" aria-hidden="true"></div>
             <div class="twin-empty-stage">
                 <div>
                     <div class="twin-empty-orbit"><i></i><i></i><i></i></div>
@@ -1060,6 +1036,7 @@ def render_twin_viewport(bridge):
             "尺度已锁定" if st.session_state.calibrated else "选择两个标定点"
         )
         st.markdown(
+            '<div class="twin-viewport-anchor" aria-hidden="true"></div>'
             '<div class="twin-stage-meta">'
             '<span class="twin-chip is-live">{}</span>'
             '<span class="twin-chip">{}</span>'
@@ -1117,11 +1094,6 @@ def render_twin_viewport(bridge):
 
 def render_diagnostic_rail(bridge):
     """Render trustworthy experiment diagnostics in the right rail."""
-    st.markdown(
-        '<div class="console-rail-title">实验诊断'
-        '<span>实时实验诊断</span></div>',
-        unsafe_allow_html=True,
-    )
     if bridge.has_image:
         width, height = bridge.image_size
         image_value = "{} × {} px".format(width, height)
