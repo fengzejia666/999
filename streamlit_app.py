@@ -646,60 +646,6 @@ def inject_interface_styles():
             overflow-wrap: anywhere;
         }
 
-        [data-testid="stFileUploadDropzone"] span {
-            font-size: 0;
-        }
-
-        [data-testid="stFileUploadDropzone"] span::after {
-            content: "将图片拖放到此处";
-            font-size: .88rem;
-        }
-
-        [data-testid="stFileUploadDropzone"] small {
-            font-size: 0;
-        }
-
-        [data-testid="stFileUploadDropzone"] small::after {
-            content: "单个文件最大 200 MB，支持 JPG、JPEG、PNG、BMP";
-            font-size: .72rem;
-        }
-
-        [data-testid="stFileUploadDropzone"] > button {
-            font-size: 0;
-        }
-
-        [data-testid="stFileUploadDropzone"] > button::after {
-            content: "浏览文件";
-            font-size: .85rem;
-        }
-
-        [data-testid="stFileUploaderDropzone"] span {
-            font-size: 0;
-        }
-
-        [data-testid="stFileUploaderDropzone"] span::after {
-            content: "将图片拖放到此处";
-            font-size: .88rem;
-        }
-
-        [data-testid="stFileUploaderDropzone"] small {
-            font-size: 0;
-        }
-
-        [data-testid="stFileUploaderDropzone"] small::after {
-            content: "单个文件最大 200 MB，支持 JPG、JPEG、PNG、BMP";
-            font-size: .72rem;
-        }
-
-        [data-testid="stFileUploaderDropzone"] button {
-            font-size: 0;
-        }
-
-        [data-testid="stFileUploaderDropzone"] button::after {
-            content: "浏览文件";
-            font-size: .85rem;
-        }
-
         [data-testid="stAlert"] {
             background: rgba(246,251,255,.78);
             border-color: rgba(67,140,191,.25);
